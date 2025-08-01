@@ -1,7 +1,6 @@
 package usecase
 
 import (
-	"RnD-service/internal/entity"
 	"RnD-service/internal/service"
 	"context"
 	"errors"
@@ -30,7 +29,7 @@ func (uc *CurrencyUsecase) FetchAndStoreRatesFromCBR(ctx context.Context) error 
 	return uc.service.StoreRatesFromCbr(ctx)
 }
 
-func (uc *CurrencyUsecase) GetRateByCharCode(ctx context.Context, charCode string) (*entity.Currency, error) {
+func (uc *CurrencyUsecase) GetRateByCharCode(ctx context.Context, charCode string, amount float64) (*CurrencyResponse, error) {
 	code := strings.ToUpper(charCode)
 
 	if !charCodeRegexp.MatchString(code) {
@@ -44,7 +43,14 @@ func (uc *CurrencyUsecase) GetRateByCharCode(ctx context.Context, charCode strin
 		return nil, err
 	}
 
+	convertedValue := (currency.Value / float64(currency.Nominal)) * amount
+
+	result := &CurrencyResponse{
+		CharName: currency.CharCode,
+		ValueRUB: convertedValue,
+	}
+
 	uc.logger.Infof("Successfuly fetched rate by char code!")
 
-	return currency, nil
+	return result, nil
 }

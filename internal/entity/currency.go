@@ -9,13 +9,3 @@ type Currency struct {
 	NumCode   int     `db:"num_code" json:"num_code"`
 	UpdatedAt string  `db:"updated_at"  json:"updated_at,omitempty"`
 }
-
-type CurrencyRequest struct {
-	CharName string  `json:"char_name" binding:"required,alpha,len=3,uppercase"`
-	Value    float64 `json:"value" binding:"required,min=1"`
-}
-
-type CurrencyResponse struct {
-	CharName string  `json:"char_name" binding:"required,alpha,len=3,uppercase"`
-	ValueRUB float64 `json:"value_rub" binding:"required,min=1"`
-}

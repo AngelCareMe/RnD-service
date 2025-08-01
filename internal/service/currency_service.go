@@ -13,8 +13,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var date = time.Now().Format("02/01/2006")
-
 type RateService struct {
 	cbr    cbr.CbrClient
 	dbRepo postgres.PostgresRepo
@@ -30,6 +28,7 @@ func NewRateService(cbr cbr.CbrClient, dbRepo postgres.PostgresRepo, logger *log
 }
 
 func (r *RateService) StoreRatesFromCbr(ctx context.Context) error {
+	date := time.Now().Format("02/01/2006")
 	r.logger.Info("Fetching currency rates from CBR...")
 
 	resp, err := r.cbr.FetchRates(ctx, date)
@@ -83,8 +82,30 @@ func (r *RateService) GetRateByCharCode(ctx context.Context, charCode string) (*
 func convertCBRResponse(resp cbr.ValCurs) ([]entity.Currency, error) {
 	var result []entity.Currency
 
-	for _, valute := range resp.Valutes {
-		if valute.CharCode == "" || valute.Value == 0 {
+	logrus.Infof("Converting %d valutes", len(resp.Valutes))
+
+	for i, valute := range resp.Valutes {
+
+		if i == 0 {
+			logrus.Debugf("First valute debug: %+v", valute)
+		}
+
+		logrus.Debugf("Processing valute: ID=%s, CharCode=%s, Value=%s",
+			valute.ID, valute.CharCode, valute.Value)
+
+		if len(resp.Valutes) == 0 {
+			logrus.Warn("No valutes found in response")
+			return []entity.Currency{}, nil
+		}
+
+		value, err := valute.GetValue()
+		if err != nil {
+			logrus.Errorf("Failed to parse value for %s: %s, error: %v",
+				valute.CharCode, valute.Value, err)
+			continue
+		}
+
+		if value == 0 {
 			continue
 		}
 
@@ -93,13 +114,14 @@ func convertCBRResponse(resp cbr.ValCurs) ([]entity.Currency, error) {
 			CharCode:  valute.CharCode,
 			Name:      valute.Name,
 			Nominal:   valute.Nominal,
-			Value:     valute.Value,
+			Value:     value,
 			NumCode:   valute.NumCode,
-			UpdatedAt: date,
+			UpdatedAt: resp.Date,
 		}
 
 		result = append(result, rate)
 	}
 
+	logrus.Infof("Converted %d valid rates", len(result))
 	return result, nil
 }

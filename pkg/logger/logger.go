@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Init(level string) {
+func Init(level string) *logrus.Logger {
 	logger := logrus.New()
 
 	lvl, err := logrus.ParseLevel(strings.ToLower(level))
@@ -23,4 +23,6 @@ func Init(level string) {
 	})
 
 	log.SetOutput(os.Stdout)
+
+	return logger
 }

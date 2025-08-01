@@ -1,19 +1,30 @@
 package cbr
 
-import "encoding/xml"
+import (
+	"encoding/xml"
+	"strconv"
+	"strings"
+)
 
 type ValCurs struct {
-	XMLName xml.Name
-	Date    string
-	Name    string
-	Valutes []Valute
+	XMLName xml.Name `xml:"ValCurs"`
+	Date    string   `xml:"Date,attr"`
+	Name    string   `xml:"name,attr"`
+	Valutes []Valute `xml:"Valute"`
 }
 
 type Valute struct {
-	ID       string  `xml:"ID,attr"`
-	NumCode  int     `xml:"NumCode"`
-	CharCode string  `xml:"CharCode"`
-	Nominal  int     `xml:"Nominal"`
-	Name     string  `xml:"Name"`
-	Value    float64 `xml:"Value"`
+	ID        string `xml:"ID,attr"`
+	NumCode   int    `xml:"NumCode"`
+	CharCode  string `xml:"CharCode"`
+	Nominal   int    `xml:"Nominal"`
+	Name      string `xml:"Name"`
+	Value     string `xml:"Value"`
+	VunitRate string `xml:"VunitRate"`
+}
+
+func (v Valute) GetValue() (float64, error) {
+	// Заменяем запятую на точку для правильного парсинга
+	valueStr := strings.Replace(v.Value, ",", ".", -1)
+	return strconv.ParseFloat(valueStr, 64)
 }
