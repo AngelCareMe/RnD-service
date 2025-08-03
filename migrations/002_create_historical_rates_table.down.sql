@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS historical_currency_rates;

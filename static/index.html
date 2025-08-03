@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Конвертер Валют от Grok</title>
+    <style>
+        :root {
+            --primary: #0f172a;
+            --secondary: #3b82f6;
+            --bg-gradient: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            --card-bg: white;
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --success: #22c55e;
+            --error: #ef4444;
+        }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', system-ui, sans-serif;
+        }
+        body {
+            background: var(--bg-gradient);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            color: var(--text-primary);
+        }
+        .container {
+            max-width: 32rem;
+            width: 100%;
+            background: var(--card-bg);
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #60a5fa 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .header p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        .tabs {
+            display: flex;
+            background: #f9fafb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border-bottom: 2px solid transparent;
+        }
+        .tab:hover {
+            background: #f3f4f6;
+        }
+        .tab.active {
+            border-bottom-color: var(--secondary);
+            color: var(--secondary);
+        }
+        .tab-content {
+            padding: 1.5rem;
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+        .btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+        .btn:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .result {
+            margin-top: 1.25rem;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            display: none;
+            font-size: 1rem;
+        }
+        .result.success {
+            background: #dcfce7;
+            border: 1px solid var(--success);
+            color: #166534;
+        }
+        .result.error {
+            background: #fee2e2;
+            border: 1px solid var(--error);
+            color: #b91c1c;
+        }
+        .result h3 {
+            font-size: 1.125rem;
+            margin-bottom: 0.5rem;
+        }
+        .loading {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem;
+        }
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid var(--secondary);
+            border-radius: 50%;
+            width: 2rem;
+            height: 2rem;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 0.75rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .popular-currencies {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+        .currency-btn {
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+        }
+        .currency-btn:hover {
+            background: var(--secondary);
+            color: white;
+            border-color: var(--secondary);
+        }
+        .api-status {
+            padding: 0.75rem;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .status-indicator {
+            width: 0.5rem;
+            height: 0.5rem;
+            border-radius: 50%;
+        }
+        .status-online {
+            background: var(--success);
+        }
+        .status-offline {
+            background: var(--error);
+        }
+        .timer {
+            font-weight: 600;
+            color: var(--secondary);
+            animation: pulse 1s infinite alternate;
+        }
+        @keyframes pulse {
+            from { opacity: 0.8; }
+            to { opacity: 1; }
+        }
+        @media (max-width: 640px) {
+            .container {
+                max-width: 100%;
+            }
+            .api-status {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>💱 Конвертер Валют</h1>
+            <p>Актуальные курсы от ЦБ РФ. Простой и быстрый.</p>
+        </div>
+        <div class="tabs">
+            <div class="tab active" data-tab="converter">Конвертер</div>
+            <div class="tab" data-tab="update">Обновить</div>
+        </div>
+        <div class="tab-content active" id="converter-tab">
+            <div class="form-group">
+                <label for="currency">Валюта</label>
+                <select id="currency">
+                    <option value="USD">USD - Доллар США</option>
+                    <option value="EUR">EUR - Евро</option>
+                    <option value="GBP">GBP - Фунт стерлингов</option>
+                    <option value="CNY">CNY - Китайский юань</option>
+                    <option value="JPY">JPY - Японская иена</option>
+                    <option value="KZT">KZT - Казахстанский тенге</option>
+                    <option value="BYN">BYN - Белорусский рубль</option>
+                    <option value="UAH">UAH - Украинская гривна</option>
+                </select>
+                <div class="popular-currencies">
+                    <button class="currency-btn" data-currency="USD">USD</button>
+                    <button class="currency-btn" data-currency="EUR">EUR</button>
+                    <button class="currency-btn" data-currency="GBP">GBP</button>
+                    <button class="currency-btn" data-currency="CNY">CNY</button>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="amount">Сумма</label>
+                <input type="number" id="amount" placeholder="Введите сумму" value="1" min="0.01" step="0.01">
+            </div>
+            <div class="form-group">
+                <label for="date">Дата (опционально)</label>
+                <input type="date" id="date">
+            </div>
+            <button class="btn" onclick="convertCurrency()">Конвертировать</button>
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Конвертируем...</p>
+            </div>
+            <div class="result" id="result">
+                <h3>Результат</h3>
+                <div class="result-content" id="result-content"></div>
+            </div>
+        </div>
+        <div class="tab-content" id="update-tab">
+            <h3>Обновить курсы</h3>
+            <p>Загрузить свежие данные от ЦБ РФ.</p>
+            <button class="btn" onclick="updateRates()">Обновить</button>
+            <div class="loading" id="loading-update">
+                <div class="spinner"></div>
+                <p>Обновляем...</p>
+            </div>
+            <div class="result" id="result-update">
+                <h3>Статус</h3>
+                <div class="result-content" id="result-update-content"></div>
+            </div>
+        </div>
+        <div class="api-status">
+            <div>
+                <span class="status-indicator status-online"></span>
+                API: Активен
+            </div>
+            <div id="timer-container">
+                До обновления: <span class="timer" id="countdown-timer">00:00:00</span>
+            </div>
+        </div>
+    </div>
+    <script>
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(`${tab.getAttribute('data-tab')}-tab`).classList.add('active');
+            });
+        });
+
+        document.querySelectorAll('.currency-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.getElementById('currency').value = btn.getAttribute('data-currency');
+            });
+        });
+
+        async function convertCurrency() {
+            const currency = document.getElementById('currency').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const dateInput = document.getElementById('date').value;
+
+            if (isNaN(amount) || amount <= 0) {
+                showError('Введите положительную сумму', 'result');
+                return;
+            }
+
+            showLoading(true);
+
+            try {
+                let url = `/currency/rate?val=${encodeURIComponent(currency)}&amount=${encodeURIComponent(amount)}`;
+                if (dateInput) url += `&date=${encodeURIComponent(dateInput)}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error((await response.json()).error || 'Ошибка сервера');
+
+                const data = await response.json();
+                const charCode = data.char_name || data.char_code || data.CharCode;
+                const value = data.value_rub || data.ValueRUB;
+                if (!charCode || typeof value === 'undefined') throw new Error('Неверный формат ответа');
+
+                const displayDate = dateInput || 'сегодня';
+                showSuccess(`${amount} ${charCode} = ${value.toFixed(2)} RUB (на ${displayDate})`, 'result');
+            } catch (error) {
+                showError(`Ошибка: ${error.message}`, 'result');
+            } finally {
+                showLoading(false);
+            }
+        }
+
+        async function updateRates() {
+            showLoading(true, 'update');
+            try {
+                const response = await fetch('/currency/rates');
+                if (!response.ok) throw new Error((await response.json()).error || 'Ошибка обновления');
+
+                const data = await response.json();
+                showSuccess(data.message || 'Курсы обновлены', 'result-update');
+            } catch (error) {
+                showError(`Ошибка: ${error.message}`, 'result-update');
+            } finally {
+                showLoading(false, 'update');
+            }
+        }
+
+        function showLoading(show, type = '') {
+            document.getElementById(`loading${type ? '-' + type : ''}`).style.display = show ? 'flex' : 'none';
+        }
+
+        function showSuccess(message, id) {
+            const el = document.getElementById(id);
+            document.getElementById(`${id}-content`).innerHTML = message;
+            el.className = 'result success';
+            el.style.display = 'block';
+        }
+
+        function showError(message, id) {
+            const el = document.getElementById(id);
+            document.getElementById(`${id}-content`).innerHTML = message;
+            el.className = 'result error';
+            el.style.display = 'block';
+        }
+
+        document.getElementById('amount').addEventListener('keypress', e => {
+            if (e.key === 'Enter') convertCurrency();
+        });
+
+        function startCountdown() {
+            const timerElement = document.getElementById('countdown-timer');
+
+            function updateTimer() {
+                const now = new Date();
+                let nextUpdate = new Date(now);
+                nextUpdate.setHours(10, 0, 0, 0); 
+
+                if (now > nextUpdate) {
+                    nextUpdate.setDate(nextUpdate.getDate() + 1); // Если прошло, то завтра
+                }
+
+                const diff = nextUpdate - now;
+                const hours = Math.floor(diff / (1000 * 60 * 60));
+                const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                timerElement.textContent = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+
+        window.addEventListener('load', startCountdown);
+    </script>
+</body>
+</html>
